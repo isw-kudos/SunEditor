@@ -181,7 +181,7 @@ export default {
       if (skipReinit) {
         return [];
       }
-      this.callPlugin(mention);
+      this.callPlugin('mention');
       return this.getMentions(true);
     }
     const { mentions = [], getId } = mention;
