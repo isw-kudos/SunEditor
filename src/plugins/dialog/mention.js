@@ -175,8 +175,16 @@ export default {
     mention.renderList(e.target.value);
   },
 
-  getMentions: function() {
-    const { mentions, getId } = this.context.mention;
+  getMentions: function(skipReinit) {
+    const { mention } = this.context;
+    if (!mention) {
+      if (skipReinit) {
+        return [];
+      }
+      this.core.callPlugin(mention);
+      return this.getMentions(true);
+    }
+    const { mentions = [], getId } = mention;
     return mentions.filter((mention) => {
       const id = getId(mention);
       return this.context.element.wysiwyg.querySelector(
