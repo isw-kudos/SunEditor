@@ -75,7 +75,7 @@
             paragraphStyle: '段落スタイル',
             textStyle: 'テキストスタイル',
             imageGallery: 'イメージギャラリー',
-            mention: '言及する',
+            mention: '言及する'
         },
         dialogBox: {
             linkBox: {
@@ -109,9 +109,6 @@
             browser: {
                 tags: 'タグ',
                 search: '探す',
-            },
-            mentionBox: {
-              title: '言及を追加',
             },
             caption: '説明付け',
             close: '閉じる',

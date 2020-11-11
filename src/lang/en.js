@@ -75,7 +75,7 @@
             paragraphStyle: 'Paragraph style',
             textStyle: 'Text style',
             imageGallery: 'Image gallery',
-            mention: 'Mention',
+            mention: 'Mention'
         },
         dialogBox: {
             linkBox: {
@@ -109,9 +109,6 @@
             browser: {
                 tags: 'Tags',
                 search: 'Search',
-            },
-            mentionBox: {
-              title: 'Add Mention',
             },
             caption: 'Insert description',
             close: 'Close',

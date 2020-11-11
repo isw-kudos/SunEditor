@@ -75,7 +75,7 @@
             paragraphStyle: 'Стиль абзаца',
             textStyle: 'Стиль текста',
             imageGallery: 'Галерея',
-            mention: 'Упоминание',
+            mention: 'Упоминание'
         },
         dialogBox: {
             linkBox: {
@@ -109,9 +109,6 @@
             browser: {
                 tags: 'Теги',
                 search: 'Поиск',
-            },
-            mentionBox: {
-              title: 'Добавить упоминание',
             },
             caption: 'Добавить подпись',
             close: 'Закрыть',

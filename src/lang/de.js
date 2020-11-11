@@ -75,7 +75,7 @@
             paragraphStyle: 'Absatzstil',
             textStyle: 'Textstil',
             imageGallery: 'Bildergalerie',
-            mention: 'Erwähnen',
+            mention: 'Erwähnen'
         },
         dialogBox: {
             linkBox: {
@@ -109,9 +109,6 @@
             browser: {
                 tags: 'Stichworte',
                 search: 'Suche',
-            },
-            mentionBox: {
-              title: 'Erwähnung hinzufügen',
             },
             caption: 'Beschreibung eingeben',
             close: 'Schließen',

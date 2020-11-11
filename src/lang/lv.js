@@ -75,7 +75,7 @@
             paragraphStyle: 'Paragrāfa stils',
             textStyle: 'Teksta stils',
             imageGallery: 'Attēlu galerija',
-            mention: 'Pieminēt',
+            mention: 'Pieminēt'
         },
         dialogBox: {
             linkBox: {
@@ -109,9 +109,6 @@
             browser: {
                 tags: 'Tagi',
                 search: 'Meklēt'
-            },
-            mentionBox: {
-              title: 'Pievienot pieminēšanu',
             },
             caption: 'Ievietot aprakstu',
             close: 'Aizvērt',

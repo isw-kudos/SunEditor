@@ -472,19 +472,16 @@
 
             if (this.currentControllerName !== plugin) {
                 this.util.setDisabledButtons(true, this.resizingDisabledButtons);
-                this.controllersOn(contextResizing.resizeContainer, contextResizing.resizeButton, this.util.setDisabledButtons.bind(this, false, this.resizingDisabledButtons), targetElement, plugin);
-            }
-    
-            // button group
-            const overLeft = this.context.element.wysiwygFrame.offsetWidth - l - contextResizing.resizeButton.offsetWidth;
-    
-            contextResizing.resizeButton.style.top = (h + t + 60) + 'px';
-            contextResizing.resizeButton.style.left = (l + (overLeft < 0 ? overLeft : 0)) + 'px';
-    
-            if (overLeft < 0) {
-                contextResizing.resizeButton.firstElementChild.style.left = (20 - overLeft) + 'px';
-            } else {
-                contextResizing.resizeButton.firstElementChild.style.left = '20px';
+                resizeContainer.style.display = 'block';
+
+                const addOffset = {left: 0, top: 50};
+                if (this.context.options.iframe) {
+                    addOffset.left -= this.context.element.wysiwygFrame.parentElement.offsetLeft;
+                    addOffset.top -= this.context.element.wysiwygFrame.parentElement.offsetTop;
+                }
+
+                this.setControllerPosition(contextResizing.resizeButton, resizeContainer, 'bottom', addOffset);
+                this.controllersOn(resizeContainer, contextResizing.resizeButton, this.util.setDisabledButtons.bind(this, false, this.resizingDisabledButtons), targetElement, plugin);
             }
     
             contextResizing._resize_w = w;
@@ -508,7 +505,10 @@
          * @description Open align submenu of module
          */
         openAlignMenu: function () {
-            this.util.addClass(this.context.resizing.alignButton, 'on');
+            const alignButton = this.context.resizing.alignButton;
+            this.util.addClass(alignButton, 'on');
+            this.context.resizing.alignMenu.style.top = (alignButton.offsetTop + alignButton.offsetHeight) + 'px';
+            this.context.resizing.alignMenu.style.left = (alignButton.offsetLeft - alignButton.offsetWidth / 2) + 'px';
             this.context.resizing.alignMenu.style.display = 'block';
     
             this.plugins.resizing._closeAlignMenu = function () {

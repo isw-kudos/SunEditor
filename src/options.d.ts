@@ -12,6 +12,10 @@ export interface SunEditorOptions {
      */
     lang?: Lang;
     /**
+     * Specifies default tag name of the editor. (default: "p")
+     */
+    defaultTag?: string;
+    /**
      * Initial value(html string) of the edit area.
      * If not, the value of the "target textarea".
      */
@@ -40,6 +44,10 @@ export interface SunEditorOptions {
      * The mode of the editor (classic, inline, balloon, balloon-always)
      */
     mode?: 'classic' | 'inline' | 'balloon' | 'balloon-always';
+    /**
+     * If true, the editor is set to RTL(Right To Left) mode.
+     */
+    rtl?: boolean;
     /**
      * Button List
      */
@@ -72,11 +80,17 @@ export interface SunEditorOptions {
      */
     iframeCSSFileName?: string | string[];
     /**
-     * CodeMirror core object
+     * A template of the "preview".
+     * The {{contents}} part in the HTML string is replaced with the contents of the editor.
+     * @example "<h1>Preview Template</h1> {{contents}} <div>_Footer_</div>"
+     */
+    previewTemplate?: string;
+    /**
+     * CodeMirror object
      */
     codeMirror?: any | { src: any; options: object };
     /**
-     * Use "math" plugin
+     * Katex object (Use "math" plugin)
      */
     katex?: any | { src: any; options: object };
     /**

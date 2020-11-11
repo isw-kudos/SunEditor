@@ -28,7 +28,7 @@ export default {
     
         // suneditor div
         const top_div = doc.createElement('DIV');
-        top_div.className = 'sun-editor';
+        top_div.className = 'sun-editor' + (options.rtl ? ' se-rtl' : '');
         if (element.id) top_div.id = 'suneditor_' + element.id;
     
         // relative div
@@ -252,6 +252,9 @@ export default {
         el.code = code;
         el.placeholder = placeholder_span;
 
+        if (mergeOptions.rtl) util.addClass(el.topArea, 'se-rtl');
+        else util.removeClass(el.topArea, 'se-rtl');
+
         return {
             callButtons: isNewToolbar ? tool_bar.pluginCallButtons : null,
             plugins: isNewToolbar || isNewPlugins ? tool_bar.plugins : null,
@@ -290,7 +293,7 @@ export default {
         if (!options.iframe) {
             wysiwygDiv.setAttribute('contenteditable', true);
             wysiwygDiv.setAttribute('scrolling', 'auto');
-            wysiwygDiv.className += ' sun-editor-editable';
+            wysiwygDiv.className += ' ' + options._editableClass;
             wysiwygDiv.style.cssText = options._editorStyles.frame + options._editorStyles.editor;
         } else {
             wysiwygDiv.allowFullscreen = true;
@@ -375,6 +378,7 @@ export default {
     _initOptions: function (element, options) {
         /** Values */
         options.lang = options.lang || _defaultLang;
+        options.defaultTag = typeof options.defaultTag === 'string' ? options.defaultTag : 'p';
         options.value = typeof options.value === 'string' ? options.value : null;
         options.historyStackDelayTime = typeof options.historyStackDelayTime === 'number' ? options.historyStackDelayTime : 400;
         /** Whitelist */
@@ -384,13 +388,19 @@ export default {
         options.attributesWhitelist = (!options.attributesWhitelist || typeof options.attributesWhitelist !== 'object') ? null : options.attributesWhitelist;
         /** Layout */
         options.mode = options.mode || 'classic'; // classic, inline, balloon, balloon-always
+        options.rtl = !!options.rtl;
+        options._editableClass = 'sun-editor-editable' + (options.rtl ? ' se-rtl' : '');
         options.toolbarWidth = options.toolbarWidth ? (util.isNumber(options.toolbarWidth) ? options.toolbarWidth + 'px' : options.toolbarWidth) : 'auto';
-        options.toolbarContainer = /balloon/i.test(options.mode) ? null : (typeof options.toolbarContainer === 'string' ? document.querySelector(options.toolbarContainer) : options.toolbarContainer);
+        options.toolbarContainer = typeof options.toolbarContainer === 'string' ? document.querySelector(options.toolbarContainer) : options.toolbarContainer;
         options.stickyToolbar = (/balloon/i.test(options.mode) || !!options.toolbarContainer) ? -1 : options.stickyToolbar === undefined ? 0 : (/^\d+/.test(options.stickyToolbar) ? util.getNumber(options.stickyToolbar, 0) : -1);
-        options.fullPage = !!options.fullPage;
         options.iframe = options.fullPage || options.iframe;
+        options.fullPage = !!options.fullPage;
         options.iframeCSSFileName = options.iframe ? typeof options.iframeCSSFileName === 'string' ? [options.iframeCSSFileName] : (options.iframeCSSFileName || ['suneditor']) : null;
+        options.previewTemplate = typeof options.previewTemplate === 'string' ? options.previewTemplate : null;
+        /** CodeMirror object */
         options.codeMirror = options.codeMirror ? options.codeMirror.src ? options.codeMirror : {src: options.codeMirror} : null;
+        /** katex object (Math plugin) */
+        options.katex = options.katex ? options.katex.src ? options.katex : {src: options.katex} : null;
         /** Display */
         options.position = typeof options.position === 'string' ? options.position : null;
         options.display = options.display || (element.style.display === 'none' || !element.style.display ? 'block' : element.style.display);
@@ -484,10 +494,8 @@ export default {
         /** ETC */
         options.placeholder = typeof options.placeholder === 'string' ? options.placeholder : null;
         options.linkProtocol = typeof options.linkProtocol === 'string' ? options.linkProtocol : null;
-        /** Math (katex) */
-        options.katex = options.katex ? options.katex.src ? options.katex : {src: options.katex} : null;
         /** Buttons */
-        options.buttonList = options.buttonList || [
+        options.buttonList = !!options.buttonList ? JSON.parse(JSON.stringify(options.buttonList)) : [
             ['undo', 'redo'],
             ['bold', 'underline', 'italic', 'strike', 'subscript', 'superscript'],
             ['removeFormat'],
@@ -496,8 +504,21 @@ export default {
             ['preview', 'print']
         ];
 
+        /** RTL - buttons */
+        if (options.rtl) {
+            options.buttonList = options.buttonList.reverse();
+        }
+
         /** --- Define icons --- */
+        // custom icons
         options.icons = (!options.icons || typeof options.icons !== 'object') ? _icons : [_icons, options.icons].reduce(function (_default, _new) {
+            for (let key in _new) {
+                if (util.hasOwn(_new, key)) _default[key] = _new[key];
+            }
+            return _default;
+        }, {});
+        // rtl icons
+        options.icons = !options.rtl ? options.icons : [options.icons, options.icons.rtl].reduce(function (_default, _new) {
             for (let key in _new) {
                 if (util.hasOwn(_new, key)) _default[key] = _new[key];
             }
@@ -517,24 +538,26 @@ export default {
         const icons = options.icons;
         const lang = options.lang;
         const cmd = util.isOSX_IOS ? '⌘' : 'CTRL';
+        const addShift = util.isOSX_IOS ? '⇧' : '+SHIFT';
         const shortcutsDisable = !options.shortcutsHint ? ['bold', 'strike', 'underline', 'italic', 'undo', 'indent'] : options.shortcutsDisable;
+        const indentKey = options.rtl ? ['[',']'] : [']','['];
 
         return {
             /** default command */
-            bold: ['_se_command_bold', lang.toolbar.bold + (shortcutsDisable.indexOf('bold') > -1 ? '' : ' (' + cmd + '+B)'), 'STRONG', '', icons.bold],
-            underline: ['_se_command_underline', lang.toolbar.underline + (shortcutsDisable.indexOf('underline') > -1 ? '' : ' (' + cmd + '+U)'), 'U', '', icons.underline],
-            italic: ['_se_command_italic', lang.toolbar.italic + (shortcutsDisable.indexOf('italic') > -1 ? '' : ' (' + cmd + '+I)'), 'EM', '', icons.italic],
-            strike: ['_se_command_strike', lang.toolbar.strike + (shortcutsDisable.indexOf('strike') > -1 ? '' : ' (' + cmd + '+SHIFT+S)'), 'DEL', '', icons.strike],
+            bold: ['_se_command_bold', lang.toolbar.bold + '<span class="se-shortcut">' + (shortcutsDisable.indexOf('bold') > -1 ? '' : cmd + '+<span class="se-shortcut-key">B</span>') + '</span>', 'STRONG', '', icons.bold],
+            underline: ['_se_command_underline', lang.toolbar.underline + '<span class="se-shortcut">' + (shortcutsDisable.indexOf('underline') > -1 ? '' : cmd + '+<span class="se-shortcut-key">U</span>') + '</span>', 'U', '', icons.underline],
+            italic: ['_se_command_italic', lang.toolbar.italic + '<span class="se-shortcut">' + (shortcutsDisable.indexOf('italic') > -1 ? '' : cmd + '+<span class="se-shortcut-key">I</span>') + '</span>', 'EM', '', icons.italic],
+            strike: ['_se_command_strike', lang.toolbar.strike + '<span class="se-shortcut">' + (shortcutsDisable.indexOf('strike') > -1 ? '' : cmd + addShift + '+<span class="se-shortcut-key">S</span>') + '</span>', 'DEL', '', icons.strike],
             subscript: ['_se_command_subscript', lang.toolbar.subscript, 'SUB', '', icons.subscript],
             superscript: ['_se_command_superscript', lang.toolbar.superscript, 'SUP', '', icons.superscript],
             removeFormat: ['', lang.toolbar.removeFormat, 'removeFormat', '', icons.erase],
-            indent: ['_se_command_indent', lang.toolbar.indent + (shortcutsDisable.indexOf('indent') > -1 ? '' : ' (' + cmd + '+])'), 'indent', '', icons.outdent],
-            outdent: ['_se_command_outdent', lang.toolbar.outdent + (shortcutsDisable.indexOf('indent') > -1 ? '' : ' (' + cmd + '+[)'), 'outdent', '', icons.indent],
+            indent: ['_se_command_indent', lang.toolbar.indent + '<span class="se-shortcut">' + (shortcutsDisable.indexOf('indent') > -1 ? '' : cmd + '+<span class="se-shortcut-key">' + indentKey[0] + '</span>') + '</span>', 'indent', '', icons.outdent],
+            outdent: ['_se_command_outdent', lang.toolbar.outdent + '<span class="se-shortcut">' + (shortcutsDisable.indexOf('indent') > -1 ? '' : cmd + '+<span class="se-shortcut-key">' + indentKey[1] + '</span>') + '</span>', 'outdent', '', icons.indent],
             fullScreen: ['se-code-view-enabled se-resizing-enabled _se_command_fullScreen', lang.toolbar.fullScreen, 'fullScreen', '', icons.expansion],
             showBlocks: ['_se_command_showBlocks', lang.toolbar.showBlocks, 'showBlocks', '', icons.show_blocks],
             codeView: ['se-code-view-enabled se-resizing-enabled _se_command_codeView', lang.toolbar.codeView, 'codeView', '', icons.code_view],
-            undo: ['_se_command_undo se-resizing-enabled', lang.toolbar.undo + (shortcutsDisable.indexOf('undo') > -1 ? '' : ' (' + cmd + '+Z)'), 'undo', '', icons.undo],
-            redo: ['_se_command_redo se-resizing-enabled', lang.toolbar.redo + (shortcutsDisable.indexOf('undo') > -1 ? '' : ' (' + cmd + '+Y / ' + cmd + '+SHIFT+Z)'), 'redo', '', icons.redo],
+            undo: ['_se_command_undo se-resizing-enabled', lang.toolbar.undo + '<span class="se-shortcut">' + (shortcutsDisable.indexOf('undo') > -1 ? '' : cmd + '+<span class="se-shortcut-key">Z</span>') + '</span>', 'undo', '', icons.undo],
+            redo: ['_se_command_redo se-resizing-enabled', lang.toolbar.redo + '<span class="se-shortcut">' + (shortcutsDisable.indexOf('undo') > -1 ? '' : cmd + '+<span class="se-shortcut-key">Y</span> / ' + cmd + addShift + '+<span class="se-shortcut-key">Z</span>') + '</span>', 'redo', '', icons.redo],
             preview: ['se-resizing-enabled', lang.toolbar.preview, 'preview', '', icons.preview],
             print: ['se-resizing-enabled', lang.toolbar.print, 'print', '', icons.print],
             save: ['_se_command_save se-resizing-enabled', lang.toolbar.save, 'save', '', icons.save],
@@ -546,7 +569,7 @@ export default {
             fontSize: ['se-btn-select se-btn-tool-size', lang.toolbar.fontSize, 'fontSize', 'submenu', '<span class="txt">' + lang.toolbar.fontSize + '</span>' + icons.arrow_down],
             fontColor: ['', lang.toolbar.fontColor, 'fontColor', 'submenu', icons.font_color],
             hiliteColor: ['', lang.toolbar.hiliteColor, 'hiliteColor', 'submenu', icons.highlight_color],
-            align: ['se-btn-align', lang.toolbar.align, 'align', 'submenu', icons.align_left],
+            align: ['se-btn-align', lang.toolbar.align, 'align', 'submenu', (options.rtl ? icons.align_right : icons.align_left)],
             list: ['', lang.toolbar.list, 'list', 'submenu', icons.list_number],
             horizontalRule: ['btn_line', lang.toolbar.horizontalRule, 'horizontalRule', 'submenu', icons.horizontal_rule],
             table: ['', lang.toolbar.table, 'table', 'submenu', icons.table],
@@ -561,9 +584,7 @@ export default {
             audio: ['', lang.toolbar.audio, 'audio', 'dialog', icons.audio],
             math: ['', lang.toolbar.math, 'math', 'dialog', icons.math],
             /** plugins - fileBrowser */
-            imageGallery: ['', lang.toolbar.imageGallery, 'imageGallery', 'fileBrowser', icons.image_gallery],
-            /** plugins - mention */
-            mention: ['', lang.toolbar.mention, 'mention', 'dialog', icons.mention]
+            imageGallery: ['', lang.toolbar.imageGallery, 'imageGallery', 'fileBrowser', icons.image_gallery]
         };
     },
 
@@ -767,6 +788,13 @@ export default {
                 _buttonTray.appendChild(enterDiv);
                 vertical = false;
             }
+        }
+
+        const lastFloat = _buttonTray.lastElementChild.style.float;
+        if (!!lastFloat) {
+            const sv =  separator_vertical.cloneNode(false);
+            sv.style.float = lastFloat;
+            _buttonTray.appendChild(sv);
         }
 
         if (_buttonTray.children.length === 1) util.removeClass(_buttonTray.firstElementChild, 'se-btn-module-border');

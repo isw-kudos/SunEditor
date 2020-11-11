@@ -75,7 +75,7 @@
             paragraphStyle: 'Stil paragraf',
             textStyle: 'Stil text',
             imageGallery: 'Galerie de imagini',
-            mention: 'Mentiune',
+            mention: 'Mentiune'
         },
         dialogBox: {
             linkBox: {
@@ -109,9 +109,6 @@
             browser: {
                 tags: 'Etichete',
                 search: 'Căutareim',
-            },
-            mentionBox: {
-              title: 'Adăugați mențiune',
             },
             caption: 'Inserează descriere',
             close: 'Închide',

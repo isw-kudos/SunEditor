@@ -75,7 +75,7 @@
             paragraphStyle: 'Styl akapitu',
             textStyle: 'Styl tekstu',
             imageGallery: 'Galeria obrazów',
-            mention: 'Wzmianka',
+            mention: 'Wzmianka'
         },
         dialogBox: {
             linkBox: {
@@ -109,9 +109,6 @@
             browser: {
                 tags: 'Tagi',
                 search: 'Szukaj',
-            },
-            mentionBox: {
-              title: 'Dodaj wzmiankę',
             },
             caption: 'Wstaw opis',
             close: 'Zamknij',

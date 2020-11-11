@@ -18,6 +18,7 @@ type fileInfo =  {
     src: string;
 };
 type seledtedFileInfo = Record<string, string | Element>;
+type commands = 'selectAll' | 'codeView' | 'fullScreen' | 'indent' | 'outdent' | 'undo' | 'redo' | 'removeFormat' | 'print' | 'preview' | 'showBlocks' | 'save' | 'bold' | 'underline' | 'italic' | 'strike' | 'subscript' | 'superscript';
 ​​
 interface Core {
     /**
@@ -228,12 +229,32 @@ interface Core {
     controllersOff(e?: KeyboardEvent | MouseEvent): void;
 
     /**
+     * @description Specify the position of the controller.
+     * @param controller Controller element.
+     * @param referEl Element that is the basis of the controller's position.
+     * @param position Type of position ("top" | "bottom")
+     * When using the "top" position, there should not be an arrow on the controller.
+     * When using the "bottom" position there should be an arrow on the controller.
+     * @param addOffset These are the left and top values that need to be added specially. 
+     * This argument is required. - {left: 0, top: 0}
+     * Please enter the value based on ltr mode.
+     * Calculated automatically in rtl mode.
+     */
+    setControllerPosition(controller: Element, referEl: Element, position: 'top' | 'bottom', addOffset: {left: number, top: number}): void;
+
+    /**
+     * @description Run event.stopPropagation and event.preventDefault.
+     * @param e Event Object
+     */
+    eventStop(e: Event): void;
+
+    /**
      * @description javascript execCommand
      * @param command javascript execCommand function property
      * @param showDefaultUI javascript execCommand function property
      * @param value javascript execCommand function property
      */
-    execCommand(command: string, showDefaultUI: boolean, value: string): void;
+    execCommand(command: string, showDefaultUI?: boolean, value?: string): void;
 
     /**
      * @description Focus to wysiwyg area using "native focus function"
@@ -277,8 +298,9 @@ interface Core {
      * @description If the "range" object is a non-editable area, add a line at the top of the editor and update the "range" object.
      * Returns a new "range" or argument "range".
      * @param range core.getRange()
+     * @param container If there is "container" argument, it creates a line in front of the container.
      */
-    getRange_addLine(range: Range): Range;
+    getRange_addLine(range: Range, container?: Element): Range;
 
     /**
      * @description Get window selection obejct
@@ -434,7 +456,7 @@ interface Core {
      * @param display Display type string ('command', 'submenu', 'dialog', 'container')
      * @param target The element of command button
      */
-    actionCall(command: string, display: string, target: Element): void;
+    actionCall(command: string, display: 'command' | 'submenu' | 'dialog' | 'container', target: Element): void;
 
     /**
      * @description Execute command of command button(All Buttons except submenu and dialog)
@@ -442,7 +464,7 @@ interface Core {
      * @param target The element of command button
      * @param command Property of command button (data-value)
      */
-    commandHandler(target: Element, command: string): void;
+    commandHandler(target: Element | null, command: commands): void;
 
     /**
      * @description Remove format of the currently selected range
@@ -454,7 +476,7 @@ interface Core {
      * Setted "margin-left" to "25px" in the top "P" tag of the parameter node.
      * @param command Separator ("indent" or "outdent")
      */
-    indent (command: string): void;
+    indent(command: 'indent' | 'outdent'): void;
 
     /**
      * @description Add or remove the class name of "body" so that the code block is visible
@@ -487,6 +509,12 @@ interface Core {
      * @param html HTML string
      */
     setContents(html: string): void;
+
+    /**
+     * @description Sets the contents of the iframe's head tag and body tag when using the "iframe" or "fullPage" option.
+     * @param ctx { head: HTML string, body: HTML string}
+     */
+    setIframeContents(ctx: { head?: string, body?: string }): void;
 
     /**
      * @description Gets the current contents
@@ -597,10 +625,10 @@ export default class SunEditor {
     onInput: EventFn;
     onKeyDown: EventFn;
     onKeyUp: EventFn;
-    onDrop: EventFn;
     onChange: (contents: string, core: Core) => void;
     onBlur: (e: FocusEvent, core: Core) => void;
-    onPaste: (e: Event, cleanData: string, maxCharCount: number, core: Core) => void;
+    onDrop: (e: Event, cleanData: string, maxCharCount: number, core: Core) => boolean | string;
+    onPaste: (e: Event, cleanData: string, maxCharCount: number, core: Core) => boolean | string;
     onCopy: (e: Event, clipboardData: any, core: Core) => void;
     onCut: (e: Event, clipboardData: any, core: Core) => void;
 
@@ -661,8 +689,10 @@ export default class SunEditor {
 
     /**
      * @description Called before the image is uploaded
+     * If true is returned, the internal upload process runs normally.
      * If false is returned, no image upload is performed.
      * If new fileList are returned,  replaced the previous fileList
+     * If undefined is returned, it waits until "uploadHandler" is executed.
      * @param files Files array
      * @param info Input information
      * @param core Core object
@@ -682,8 +712,10 @@ export default class SunEditor {
 
     /**
      * @description Called before the video is uploaded
+     * If true is returned, the internal upload process runs normally.
      * If false is returned, no video upload is performed.
      * If new fileList are returned,  replaced the previous fileList
+     * If undefined is returned, it waits until "uploadHandler" is executed.
      * @param files Files array
      * @param info Input information
      * @param core Core object
@@ -703,8 +735,10 @@ export default class SunEditor {
 
     /**
      * @description Called before the audio is uploaded
+     * If true is returned, the internal upload process runs normally.
      * If false is returned, no audio upload is performed.
      * If new fileList are returned,  replaced the previous fileList
+     * If undefined is returned, it waits until "uploadHandler" is executed.
      * @param files Files array
      * @param info Input information
      * @param core Core object
@@ -738,7 +772,7 @@ export default class SunEditor {
      * @param remainingFilesCount Count of remaining files to upload (0 when added as a url)
      * @param core Core object
      */
-    onImageUpload: (targetElement: HTMLImageElement, index: number, state: string, info: fileInfo, remainingFilesCount: number, core: Core) => void;
+    onImageUpload: (targetElement: HTMLImageElement, index: number, state: 'create' | 'update' | 'delete', info: fileInfo, remainingFilesCount: number, core: Core) => void;
 
     /**
      * @description Called when the video(iframe, video) is uploaded, updated, deleted
@@ -756,7 +790,7 @@ export default class SunEditor {
      * @param remainingFilesCount Count of remaining files to upload (0 when added as a url)
      * @param core Core object
      */
-    onVideoUpload: (targetElement: HTMLIFrameElement | HTMLVideoElement, index: number, state: string, info: fileInfo, remainingFilesCount: number, core: Core) => void;
+    onVideoUpload: (targetElement: HTMLIFrameElement | HTMLVideoElement, index: number, state: 'create' | 'update' | 'delete', info: fileInfo, remainingFilesCount: number, core: Core) => void;
 
     /**
      * @description Called when the audio is uploaded, updated, deleted
@@ -774,7 +808,7 @@ export default class SunEditor {
      * @param remainingFilesCount Count of remaining files to upload (0 when added as a url)
      * @param core Core object
      */
-    onAudioUpload: (targetElement: HTMLAudioElement, index: number, state: string, info: fileInfo, remainingFilesCount: number, core: Core) => void;
+    onAudioUpload: (targetElement: HTMLAudioElement, index: number, state: 'create' | 'update' | 'delete', info: fileInfo, remainingFilesCount: number, core: Core) => void;
 
     /**
      * @description Called when the image is upload failed

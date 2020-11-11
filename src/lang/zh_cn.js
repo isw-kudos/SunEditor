@@ -75,7 +75,7 @@
             paragraphStyle: '段落样式',
             textStyle: '文字样式',
             imageGallery: '图片库',
-            mention: '提到',
+            mention: '提到'
         },
         dialogBox: {
             linkBox: {
@@ -109,9 +109,6 @@
             browser: {
                 tags: '标签',
                 search: '搜索',
-            },
-            mentionBox: {
-              title: '添加提及',
             },
             caption: '标题',
             close: '取消',
