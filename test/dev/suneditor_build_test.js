@@ -742,9 +742,13 @@ let s2 = window.s2 = editor.create(document.getElementById('editor2'), {
 s2.core.callPlugin('mention');
 s2.onKeyDown = e => {
   if (e.key === '@') {
-    s2.core.context.mention.open();
-    e.preventDefault();
-    e.stopPropagation();
+    const { focusNode } = s2.core.getSelection();
+    const { textContent } = focusNode;
+    if (textContent.trim() === '' || focusNode.textContent.endsWith(' ')){
+      s2.core.context.mention.open();
+      e.preventDefault();
+      e.stopPropagation();
+    }
   }
 }
 

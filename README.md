@@ -334,9 +334,13 @@ let editor = suneditor.create('sample', {
 editor.core.callPlugin('mention');
 editor.onKeyDown = e => {
   if (e.key === '@') {
-    editor.core.context.mention.open();
-    e.preventDefault();
-    e.stopPropagation();
+    const { focusNode } = editor.core.getSelection();
+    const { textContent } = focusNode;
+    if (textContent.trim() === '' || focusNode.textContent.endsWith(' ')){
+      editor.core.context.mention.open();
+      e.preventDefault();
+      e.stopPropagation();
+    }
   }
 }
 
