@@ -110,6 +110,9 @@
                 tags: 'تاگه‌كان',
                 search: 'گه‌ران',
             },
+            mentionBox: {
+              title: 'تنويه ب',
+            },
             caption: 'پێناسه‌یه‌ك دابنێ',
             close: 'داخستن',
             submitButton: 'ناردن',

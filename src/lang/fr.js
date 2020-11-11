@@ -110,6 +110,9 @@
                 tags: 'Mots clés',
                 search: 'Chercher',
             },
+            mentionBox: {
+              title: 'Ajouter une mention',
+            },
             caption: 'Insérer une description',
             close: 'Fermer',
             submitButton: 'Appliquer',

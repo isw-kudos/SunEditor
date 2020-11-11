@@ -113,6 +113,9 @@
                 tags: 'Tags',
                 search: 'Søg',
             },
+            mentionBox: {
+              title: 'Tilføj omtale',
+            },
             caption: 'Indsæt beskrivelse',
             close: 'Luk',
             submitButton: 'Gennemfør',

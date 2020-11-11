@@ -87,6 +87,9 @@ export interface Lang {
       tags: string,
       search: string,
     },
+    mentionBox: {
+      title: string,
+    },
     caption: string,
     close: string,
     submitButton: string,

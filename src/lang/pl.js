@@ -110,6 +110,9 @@
                 tags: 'Tagi',
                 search: 'Szukaj',
             },
+            mentionBox: {
+              title: 'Dodaj wzmiankę',
+            },
             caption: 'Wstaw opis',
             close: 'Zamknij',
             submitButton: 'Zatwierdź',

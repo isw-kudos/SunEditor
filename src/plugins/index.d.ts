@@ -24,11 +24,12 @@ import image from './dialog/image';
 import video from './dialog/video';
 import audio from './dialog/audio';
 import math from './dialog/math';
+import mention from './dialog/mention';
 
 // file browser
 import imageGallery from './fileBrowser/imageGallery';
 
 declare const _plugins: Plugin[];
 
-export { blockquote, align, font, fontSize, fontColor, hiliteColor, horizontalRule, list, table, formatBlock, lineHeight, template, paragraphStyle, textStyle, link, image, video, audio, math, imageGallery };
+export { blockquote, align, font, fontSize, fontColor, hiliteColor, horizontalRule, list, table, formatBlock, lineHeight, template, paragraphStyle, textStyle, link, image, video, audio, math, mention, imageGallery };
 export default _plugins;

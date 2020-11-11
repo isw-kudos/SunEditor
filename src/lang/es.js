@@ -110,6 +110,9 @@
                 tags: 'Etiquetas',
                 search: 'Buscar',
             },
+            mentionBox: {
+              title: 'Agregar mención',
+            },
 			caption: 'Insertar descripción',
 			close: 'Cerrar',
 			submitButton: 'Enviar',
