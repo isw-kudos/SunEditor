@@ -459,7 +459,7 @@ let ss = window.ss = suneditor.create(document.getElementById('editor1'), {
     // iframe: true,
     videoFileInput: true,
     audioFileInput: true,
-    placeholder: 'Start typing something...',
+    placeholder: window.aa || 'Start typing something...',
     templates: [
         {
             name: 'Template-1',
@@ -1061,7 +1061,9 @@ s2.onVideoUpload = function (targetElement, index, state, videoInfo, remainingFi
 }
 
 window.sun_setOptions2 = function () {
-    s2.setOptions(newOption);
+    s2.setOptions({
+        placeholder: 'fdsfda'
+    });
 }
 
 window.sun_setOptions3 = function () {
