@@ -388,6 +388,8 @@ plugins.mention.renderItem = ({name}) => `<span>${name}</span>`;
 
 let ss = window.ss = suneditor.create(document.getElementById('editor1'), {
     value: "aa",
+    stickyToolbar: 50,
+    fullScreenOffset: '10px',
     // rtl: true,
     // fullPage: true,
     // pasteTagsWhitelist: 'p|a|strong|em|h3|h4|h5|ul|ol|li|blockquote|table|thead|tbody|tfoot|tr|td|sup|sub',
