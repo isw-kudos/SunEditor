@@ -75,7 +75,7 @@
             paragraphStyle: "Стиль абзацу",
             textStyle: "Стиль тексту",
             imageGallery: "Галерея",
-            mention: "Згадати",
+            mention: "Згадати"
         },
         dialogBox: {
             linkBox: {
@@ -83,32 +83,34 @@
                 url: "Посилання",
                 text: "Текст",
                 newWindowCheck: "Відкривати в новому вікні",
+                downloadLinkCheck: 'Посилання для завантаження',
+                bookmark: 'Закладка'
             },
             mathBox: {
                 title: "Формула",
                 inputLabel: "Математична запис",
                 fontSizeLabel: "Розмір шрифту",
-                previewLabel: "Попередній перегляд",
+                previewLabel: "Попередній перегляд"
             },
             imageBox: {
                 title: "Вставити зображення",
                 file: "Виберіть файл",
                 url: "Посилання на зображення",
-                altText: "Текстовий опис зображення",
+                altText: "Текстовий опис зображення"
             },
             videoBox: {
                 title: "Вставити відео",
                 file: "Виберіть файл",
-                url: "Посилання на відео, Youtube, Vimeo",
+                url: "Посилання на відео, Youtube, Vimeo"
             },
             audioBox: {
                 title: "Вставити аудіо",
                 file: "Виберіть файл",
-                url: "Посилання на аудіо",
+                url: "Посилання на аудіо"
             },
             browser: {
                 tags: "Теги",
-                search: "Пошук",
+                search: "Пошук"
             },
             caption: "Додати підпис",
             close: "Закрити",
@@ -122,7 +124,7 @@
             width: "Ширина",
             height: "Висота",
             size: "Розмір",
-            ratio: "Співвідношення",
+            ratio: "Співвідношення"
         },
         controller: {
             edit: "Змінити",
@@ -150,7 +152,7 @@
             mergeCells: "Об'єднати клітинки",
             splitCells: "Розділити клітинку",
             HorizontalSplit: "Розділити горизонтально",
-            VerticalSplit: "Розділити вертикально",
+            VerticalSplit: "Розділити вертикально"
         },
         menu: {
             spaced: "Інтервал",
@@ -158,8 +160,8 @@
             neon: "Неон",
             translucent: "Напівпрозорий",
             shadow: "Тінь",
-            code: "Код",
-        },
+            code: "Код"
+        }
     };
 
     if (typeof noGlobal === typeof undefined) {
