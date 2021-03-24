@@ -31,18 +31,6 @@ Array.prototype._move = function(from, to)
 
 import align from '../../src/plugins/submenu/align'
 
-// const shadow = document.querySelector('#app').attachShadow({ mode: 'open' })
-// const appEl = document.createElement('textarea')
-// const appStyle = document.createElement('style')
-// appStyle.textContent = u.getPageStyle();
-
-// shadow.appendChild(appStyle);
-// shadow.appendChild(appEl);
-// suneditor.create(appEl, {
-//     width: '400px',
-//     height: 500
-// })
-
 const fs = [8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
     ,8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72,8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72,8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72,8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
     ,8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72,8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72,8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72,8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72
@@ -179,6 +167,23 @@ const complexEditor = [
             ['-right', ':i-More Misc-default.more_vertical', 'fullScreen', 'showBlocks', 'codeView', 'preview', 'print', 'save', 'template']
         ]]
 ]
+
+// shadowroot test
+const shadow = document.querySelector('#app').attachShadow({ mode: 'open' })
+const appEl = document.createElement('textarea')
+const appStyle = document.createElement('style')
+appStyle.textContent = u.getPageStyle(document);
+
+shadow.appendChild(appStyle);
+shadow.appendChild(appEl);
+suneditor.create(appEl, {
+    plugins: plugins,
+    mode: "balloon",
+    katex: Katex,
+    width: '400px',
+    height: 500,
+    buttonList: complexEditor
+})
 
 let ssss = suneditor.create(("sample1"), {
     plugins: plugins, //[sunEditorNpsButtonBgColor, sunEditorNpsButtonFontColor, sunEditorNpsButtonFontSize],
@@ -388,11 +393,25 @@ plugins.mention.renderItem = ({name}) => `<span>${name}</span>`;
 
 let ss = window.ss = suneditor.create(document.getElementById('editor1'), {
     value: "aa",
+    value: `
+    <h1>header111</h1>
+    <p>fdafds</p>
+    <h2>header22222</h2>
+    <p>fdafds13fsoiph</p>
+    <h3>header--33333</h3>
+    <p>fd23584jkfsoiph</p>
+    <p>fdaf5555oiph</p>
+    <p>102389kjfsaph</p>
+    `,
+    // value: '<html bgcolor="e4e4e4"><p><meta content="text/html; charset=utf-8"http-equiv="Content-Type"><title>Postman</title><p><body bgcolor="e4e4e4"style="margin:0;padding:0"><p><table cellpadding="0"cellspacing="0"width="100%"bgcolor="e4e4e4"><tr><td><p><table cellpadding="20"cellspacing="0"align="center"id="top-message"width="600"><tr><td><table cellpadding="10"cellspacing="0"align="center"id="header"><tr><td bgcolor="434343"width="570"><table cellpadding="0"cellspacing="0"align="center"id="content-1"><tr><td width="100"valign="top"><table cellpadding="5"cellspacing="0"><tr><td bgcolor="434343"><img src="https://www.guidovisser.com/bell-small.png"></table><td width="370"><h1 style="font-family:Arial,Helvetica Neue,Helvetica,sans-serif;font-size:30px;padding-top:25px;color:#fff">Awesome HTML Email Template</h1><td width="100"valign="top"colspan="3"><table cellpadding="5"cellspacing="0"><tr><td bgcolor="434343"><img src="https://www.guidovisser.com/pixel.png"></table></table><!-- content 1 --><tr><td bgcolor="ffffff"width="570"style="font-family:Arial,Helvetica Neue,Helvetica,sans-serif">TEST TEXT<tr><td bgcolor="434343"width="570"><p><table cellpadding="10"cellspacing="0"width="100%"><tr><td bgcolor="434343"><tr><td style="color:#fff;font-family:Arial,Helvetica Neue,Helvetica,sans-serif"align="center"cellspacing="10"><!-- <a href="https://guidovisser.com" style="background-color: #D2694B; color: #ffffff; height:25px; text-decoration: none;">Go to Test Testing</a> --><!-- <a href="$(SELFRESLINK)" style="background-color: #D2694B;color: #ffffff; text-decoration: none;">Go to Henk Henken</a> --><!--[if mso]><v:roundrect xmlns_v="urn:schemas-microsoft-com:vml"xmlns_w="urn:schemas-microsoft-com:office:word"href="https://guidovisser.com"style="height:36px;v-text-anchor:middle;width:200px"arcsize="5%"strokecolor="#D2694B"fillcolor="#D2694B"><w:anchorlock><center style="color:#fff;font-family:Helvetica,Arial,sans-serif">I am a button →</center></v:roundrect><![endif]--> <a href="https://guidovisser.com"style="background-color:#d2694b;border:1px solid #d2694b;border-radius:3px;color:#fff;display:inline-block;font-family:sans-serif;line-height:44px;text-align:center;text-decoration:none;width:200px;-webkit-text-size-adjust:none;mso-hide:all">Go to Test</a><td style="color:#fff;font-family:Arial,Helvetica Neue,Helvetica,sans-serif"align="center"cellpadding="10"><!--[if mso]><v:roundrect xmlns_v="urn:schemas-microsoft-com:vml"xmlns_w="urn:schemas-microsoft-com:office:word"href="$(SELFRESLINK)"style="height:36px;v-text-anchor:middle;width:200px"arcsize="5%"strokecolor="#D2694B"fillcolor="#D2694B"><w:anchorlock><center style="color:#fff;font-family:Helvetica,Arial,sans-serif">I am a button →</center></v:roundrect><![endif]--> <a href="https://guidovisser.com"style="background-color:#d2694b;border:1px solid #d2694b;border-radius:3px;color:#fff;display:inline-block;font-family:sans-serif;line-height:44px;text-align:center;text-decoration:none;width:200px;-webkit-text-size-adjust:none;mso-hide:all">Go to test 2</a></table><tr><td bgcolor="434343"width="570"style="color:#fff"><p><table cellpadding="5"cellspacing="0"><tr><td bgcolor="434343"><img src="https://www.guidovisser.com/bell-small.png"><td style="font-family:Arial,Helvetica Neue,Helvetica,sans-serif;color:#fff;font-size:12px;padding-top:22px"valign="top"><p><p>Test footer<p>If you need support, contact: <a href="mailto:notexistingaddress@guidovisser.com?subject=Contact Support"style="color:#fff;text-decoration:underline">notexistingaddress@guidovisser.com</a><p>This email is automatically generated, replying has no use.</table></p><!-- header --><!-- header --><!-- top message --><p><!-- wrapper --><p><p>',
     stickyToolbar: 50,
+    _printClass: '',
     fullScreenOffset: '10px',
+    charCounterType: "byte-html",
     mediaAutoSelect: false,
+    // mode: 'balloon',
     // rtl: true,
-    // fullPage: true,
+    fullPage: true,
     // pasteTagsWhitelist: 'p|a|strong|em|h3|h4|h5|ul|ol|li|blockquote|table|thead|tbody|tfoot|tr|td|sup|sub',
     linkRel: [
         'alternate',
@@ -417,14 +436,11 @@ let ss = window.ss = suneditor.create(document.getElementById('editor1'), {
     callBackSave: function (contents){
         console.log('save', contents)
     },
-    allowStyles: {
-        span: ['opacity'],
-        format: '',
-        rangeFormat: 'a|b'
-    },
     attributesWhitelist: {
-        all: 'style'
+        all: "style|bgcolor|border|cellpadding|colspan|cellspacing|align",
+        input: "checked"
     },
+    addTagsWhitelist: "table|thead|tbody|tr|td|title|html|body|meta",
     // iframe: true,
     defaultTag: 'div',
     textTags: {
@@ -720,7 +736,13 @@ window.sun_getImagesInfo = function () {
 }
 
 window.sun_insertHTML = function (html) {
-    ss.insertHTML('<img style="height:100px; width:100px;" src="http://suneditor.com/docs/cat.jpg" /><p>fdafds</p>', true, true, true)
+    ss.insertHTML('<img style="height:100px; width:100px;" src="http://suneditor.com/docs/cat.jpg" /><p>fdafds</p>', true, true, false);
+    ss.setOptions({
+        mathFontSize: [
+            {text: '1', value: '1em'},
+            {text: '2', value: '2em', default: true},
+        ]
+    })
 }
 
 window.sun_getContents = function () {
@@ -779,8 +801,9 @@ window.sun_create = function () {
     //     plugins: plugins,
     //     height: 148
     // });
+    console.log("langlang")
     ss.setOptions({
-        defaultTag: 'p'
+        lang: lang.ko
     })
 
     // ss.core.commandHandler(null, 'selectAll');
@@ -805,7 +828,21 @@ const editor = suneditor.init({
 let s2 = window.s2 = editor.create(document.getElementById('editor2'), {
     // lang: lang.ru,
     // mode: 'inline',
-    value: "",
+    value: `<p>111</p>
+
+    <p>222</p>
+    
+    <p>333</p>
+    
+    <hr class="__se__solid">
+    
+    <p>444</p>
+    
+    <p>555</p>
+    
+    <p>666<br>
+    </p>
+    `,
     previewTemplate: `
     <h1>Preview Template</h1>
     {{ contents }}

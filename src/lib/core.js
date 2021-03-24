@@ -59,6 +59,12 @@ export default function (context, pluginCallButtons, plugins, lang, options, _re
         _shadowRoot: null,
 
         /**
+         * @description Block controller mousedown events in "shadowRoot" environment
+         * @private
+         */
+        _shadowRootControllerEventTarget: null,
+
+        /**
          * @description Util object
          */
         util: util,
@@ -500,6 +506,32 @@ export default function (context, pluginCallButtons, plugins, lang, options, _re
         },
 
         /**
+         * @description Gets the current editor-relative scroll offset.
+         * @returns {Object} {top, left}
+         */
+        getGlobalScrollOffset: function () {
+            let t = 0, l = 0;
+            let el = context.element.topArea;
+            while (el) {
+                t += el.scrollTop;
+                l += el.scrollLeft;
+                el = el.parentElement;
+            }
+            
+            el = this._shadowRoot ? this._shadowRoot.host : null;
+            while (el) {
+                t += el.scrollTop;
+                l += el.scrollLeft;
+                el = el.parentElement;
+            }
+
+            return {
+                top: t,
+                left: l
+            };
+        },
+
+        /**
          * @description Method for managing submenu element.
          * You must add the "submenu" element using the this method at custom plugin.
          * @param {String} pluginName Plugin name
@@ -643,13 +675,8 @@ export default function (context, pluginCallButtons, plugins, lang, options, _re
 
             // set menu position
             const toolbarTop = toolbarOffset.top;
-            let menuHeight = menu.offsetHeight;
-            let el = context.element.topArea;
-            let scrollTop = 0;
-            while (!!el) {
-                scrollTop += el.scrollTop;
-                el = el.parentElement;
-            }
+            const menuHeight = menu.offsetHeight;
+            const scrollTop = this.getGlobalScrollOffset().top;
 
             const menuHeight_bottom = _w.innerHeight - (toolbarTop - scrollTop + bt + element.parentElement.offsetHeight);
             if (menuHeight_bottom < menuHeight) {
@@ -698,7 +725,13 @@ export default function (context, pluginCallButtons, plugins, lang, options, _re
                     this.currentFileComponentInfo = this.getFileComponent(arg);
                     continue;
                 }
-                if (arg.style) arg.style.display = 'block';
+                if (arg.style) {
+                    arg.style.display = 'block';
+                    if (this._shadowRoot && this._shadowRootControllerEventTarget.indexOf(arg) === -1) {
+                        arg.addEventListener('mousedown', function (e) { e.preventDefault(); e.stopPropagation(); });
+                        this._shadowRootControllerEventTarget.push(arg);
+                    }
+                }
                 this.controllerArray.push(arg);
             }
 
@@ -846,16 +879,18 @@ export default function (context, pluginCallButtons, plugins, lang, options, _re
             } else {
                 try {
                     const range = this.getRange();
-
                     if (range.startContainer === range.endContainer && util.isWysiwygDiv(range.startContainer)) {
-                        const format = util.createElement(options.defaultTag);
-                        const br = util.createElement('BR');
-                        format.appendChild(br);
-                        context.element.wysiwyg.appendChild(format);
-                        this.setRange(br, 0, br, 0);
-                    } else {
-                        this.setRange(range.startContainer, range.startOffset, range.endContainer, range.endOffset);
+                        const currentNode = range.commonAncestorContainer.children[range.startOffset];
+                        if (!util.isFormatElement(currentNode) && !util.isComponent(currentNode)) {
+                            const format = util.createElement(options.defaultTag);
+                            const br = util.createElement('BR');
+                            format.appendChild(br);
+                            context.element.wysiwyg.insertBefore(format, currentNode);
+                            this.setRange(br, 0, br, 0);
+                            return;
+                        }
                     }
+                    this.setRange(range.startContainer, range.startOffset, range.endContainer, range.endOffset);
                 } catch (e) {
                     this.nativeFocus();
                 }
@@ -1022,7 +1057,7 @@ export default function (context, pluginCallButtons, plugins, lang, options, _re
          * @returns {Node}
          */
         getSelectionNode: function () {
-            if (util.isWysiwygDiv(this._variable._selectionNode)) this._editorRange();
+            if (!context.element.wysiwyg.contains(this._variable._selectionNode)) this._editorRange();
             if (!this._variable._selectionNode) {
                 const selectionNode = util.getChildElement(context.element.wysiwyg.firstChild, function (current) { return current.childNodes.length === 0 || current.nodeType === 3; }, false);
                 if (!selectionNode) {
@@ -1054,7 +1089,8 @@ export default function (context, pluginCallButtons, plugins, lang, options, _re
             this._variable._range = range;
 
             if (range.collapsed) {
-                selectionNode = range.commonAncestorContainer;
+                if (util.isWysiwygDiv(range.commonAncestorContainer)) selectionNode = range.commonAncestorContainer.children[range.startOffset] || range.commonAncestorContainer;
+                else selectionNode = range.commonAncestorContainer;
             } else {
                 selectionNode = selection.extentNode || selection.anchorNode;
             }
@@ -1762,9 +1798,14 @@ export default function (context, pluginCallButtons, plugins, lang, options, _re
             let container, offset = 0;
             let startCon = range.startContainer;
             let endCon = range.endContainer;
-            const startOff = range.startOffset;
-            const endOff = range.endOffset;
+            let startOff = range.startOffset;
+            let endOff = range.endOffset;
             const commonCon = (range.commonAncestorContainer.nodeType === 3 && range.commonAncestorContainer.parentNode === startCon.parentNode) ? startCon.parentNode : range.commonAncestorContainer;
+            if (commonCon === startCon && commonCon === endCon) {
+                startCon = commonCon.children[startOff];
+                endCon = commonCon.children[endOff];
+                startOff = endOff = 0;
+            }
 
             let beforeNode = null;
             let afterNode = null;
@@ -1843,7 +1884,8 @@ export default function (context, pluginCallButtons, plugins, lang, options, _re
 
                 if (item === startCon) {
                     if (startCon.nodeType === 1) {
-                        beforeNode = util.createTextNode(startCon.textContent);
+                        if (util.isComponent(startCon)) continue;
+                        else beforeNode = util.createTextNode(startCon.textContent);
                     } else {
                         if (item === endCon) {
                             beforeNode = util.createTextNode(startCon.substringData(0, startOff) + endCon.substringData(endOff, (endCon.length - endOff)));
@@ -1865,7 +1907,8 @@ export default function (context, pluginCallButtons, plugins, lang, options, _re
 
                 if (item === endCon) {
                     if (endCon.nodeType === 1) {
-                        afterNode = util.createTextNode(endCon.textContent);
+                        if (util.isComponent(endCon)) continue;
+                        else afterNode = util.createTextNode(endCon.textContent);
                     } else {
                         afterNode = util.createTextNode(endCon.substringData(endOff, (endCon.length - endOff)));
                     }
@@ -4097,7 +4140,6 @@ export default function (context, pluginCallButtons, plugins, lang, options, _re
 
             for (let i = 0, len = rangeLines.length, f, margin; i < len; i++) {
                 f = rangeLines[i];
-
                 if (!util.isListCell(f) || !this.plugins.list) {
                     margin = /\d+/.test(f.style[marginDir]) ? util.getNumber(f.style[marginDir], 0) : 0;
                     if (shift) {
@@ -4380,7 +4422,7 @@ export default function (context, pluginCallButtons, plugins, lang, options, _re
             const wDoc = this._wd;
 
             if (options.iframe) {
-                const arrts = options.fullPage ? util.getAttributesToString(wDoc.body, ['contenteditable']) : 'class="' + options._editableClass + '"';
+                const arrts = options._printClass !== null ? 'class="' + options._printClass + '"' : options.fullPage ? util.getAttributesToString(wDoc.body, ['contenteditable']) : 'class="' + options._editableClass + '"';
 
                 printDocument.write('' +
                     '<!DOCTYPE html><html>' +
@@ -4406,7 +4448,7 @@ export default function (context, pluginCallButtons, plugins, lang, options, _re
                     '<head>' +
                     linkHTML +
                     '</head>' +
-                    '<body class="' + options._editableClass + '">' + contentsHTML + '</body>' +
+                    '<body class="' + (options._printClass !== null ? options._printClass : options._editableClass) + '">' + contentsHTML + '</body>' +
                     '</html>'
                 );
             }
@@ -4449,7 +4491,7 @@ export default function (context, pluginCallButtons, plugins, lang, options, _re
             const wDoc = this._wd;
 
             if (options.iframe) {
-                const arrts = options.fullPage ? util.getAttributesToString(wDoc.body, ['contenteditable']) : 'class="' + options._editableClass + '"';
+                const arrts = options._printClass !== null ? 'class="' + options._printClass + '"' : options.fullPage ? util.getAttributesToString(wDoc.body, ['contenteditable']) : 'class="' + options._editableClass + '"';
 
                 windowObject.document.write('' +
                     '<!DOCTYPE html><html>' +
@@ -4479,7 +4521,7 @@ export default function (context, pluginCallButtons, plugins, lang, options, _re
                     '<title>' + lang.toolbar.preview + '</title>' +
                     linkHTML +
                     '</head>' +
-                    '<body class="' + options._editableClass + '" style="margin:10px auto !important; height:auto !important; outline:1px dashed #ccc;">' + contentsHTML + '</body>' +
+                    '<body class="' + (options._printClass !== null ? options._printClass : options._editableClass) + '" style="margin:10px auto !important; height:auto !important; outline:1px dashed #ccc;">' + contentsHTML + '</body>' +
                     '</html>'
                 );
             }
@@ -4608,6 +4650,48 @@ export default function (context, pluginCallButtons, plugins, lang, options, _re
         },
 
         /**
+         * @description Tag and tag attribute check RegExp function. (used by "cleanHTML" and "convertContentsForEditor")
+         * @param {Boolean} rowLevelCheck Row level check
+         * @param {String} m RegExp value
+         * @param {String} t RegExp value
+         * @returns {String}
+         * @private
+         */
+        _cleanTags: function (rowLevelCheck, m, t) {
+            if (/^<[a-z0-9]+\:[a-z0-9]+/i.test(m)) return m;
+
+            let v = null;
+            const tAttr = this._attributesTagsWhitelist[t.match(/(?!<)[a-zA-Z0-9]+/)[0].toLowerCase()];
+            if (tAttr) v = m.match(tAttr);
+            else v = m.match(this._attributesWhitelistRegExp);
+
+            if ((rowLevelCheck || /<span/i.test(t)) && (!v || !/style=/i.test(v.toString()))) {
+                const sv = m.match(/style\s*=\s*"[^"]*"/);
+                if (sv) {
+                    if (!v) v = [];
+                    v.push(sv[0]);
+                }
+            }
+
+            if (/<a\b/i.test(t)) {
+                const sv = m.match(/id\s*=\s*"[^"]*"/);
+                if (sv) {
+                    if (!v) v = [];
+                    v.push(sv[0]);
+                }
+            }
+
+            if (v) {
+                for (let i = 0, len = v.length; i < len; i++) {
+                    if (rowLevelCheck && /^class="(?!(__se__|se-|katex))/.test(v[i])) continue;
+                    t += ' ' + (/^href\s*=\s*('|"|\s)*javascript\s*\:/.test(v[i]) ? '' : v[i]);
+                }
+            }
+
+            return t;
+        },
+
+        /**
          * @description Gets the clean HTML code for editor
          * @param {String} html HTML string
          * @param {String|RegExp|null} whitelist Regular expression of allowed tags.
@@ -4615,46 +4699,11 @@ export default function (context, pluginCallButtons, plugins, lang, options, _re
          * @returns {String}
          */
         cleanHTML: function (html, whitelist) {
-            html = this._deleteDisallowedTags(html)
-                .replace(/(<[a-zA-Z0-9]+)[^>]*(?=>)/g, function (m, t) {
-                    if (/^<[a-z0-9]+\:[a-z0-9]+/i.test(m)) return m;
-
-                    let v = null;
-                    const tAttr = this._attributesTagsWhitelist[t.match(/(?!<)[a-zA-Z0-9]+/)[0].toLowerCase()];
-                    if (tAttr) v = m.match(tAttr);
-                    else v = m.match(this._attributesWhitelistRegExp);
-
-                    if (/<span/i.test(t) && (!v || !/style=/i.test(v.toString()))) {
-                    // @v3
-                    // if (!v || !/style=/i.test(v.toString())) {
-                        const sv = m.match(/style\s*=\s*"[^"]*"/);
-                        if (sv) {
-                            if (!v) v = [];
-                            v.push(sv[0]);
-                        }
-                    }
-
-                    if (/<a\b/i.test(t)) {
-                        const sv = m.match(/id\s*=\s*"[^"]*"/);
-                        if (sv) {
-                            if (!v) v = [];
-                            v.push(sv[0]);
-                        }
-                    }
-
-                    if (v) {
-                        for (let i = 0, len = v.length; i < len; i++) {
-                            if (/^class="(?!(__se__|se-|katex))/.test(v[i])) continue;
-                            t += ' ' + v[i];
-                        }
-                    }
-
-                    return t;
-                }.bind(this));
+            html = this._deleteDisallowedTags(html).replace(/(<[a-zA-Z0-9]+)[^>]*(?=>)/g, this._cleanTags.bind(this, false));
 
             const dom = _d.createRange().createContextualFragment(html);
             try {
-                util._consistencyCheckOfHTML(dom, this._htmlCheckWhitelistRegExp, options.allowStyles);
+                util._consistencyCheckOfHTML(dom, this._htmlCheckWhitelistRegExp);
             } catch (error) {
                 console.warn('[SUNEDITOR.cleanHTML.consistencyCheck.fail] ' + error);
             }
@@ -4699,46 +4748,12 @@ export default function (context, pluginCallButtons, plugins, lang, options, _re
          * @returns {String}
          */
         convertContentsForEditor: function (contents) {
-            contents = this._deleteDisallowedTags(contents)
-                .replace(/(<[a-zA-Z0-9]+)[^>]*(?=>)/g, function (m, t) {
-                    if (/^<[a-z0-9]+\:[a-z0-9]+/i.test(m)) return m;
-
-                    let v = null;
-                    const tAttr = this._attributesTagsWhitelist[t.match(/(?!<)[a-zA-Z0-9]+/)[0].toLowerCase()];
-                    if (tAttr) v = m.match(tAttr);
-                    else v = m.match(this._attributesWhitelistRegExp);
-
-                    if (/<span/i.test(t) && (!v || !/style=/i.test(v.toString()))) {
-                    // @v3
-                    // if (!v || !/style=/i.test(v.toString())) {
-                        const sv = m.match(/style\s*=\s*"[^"]*"/);
-                        if (sv) {
-                            if (!v) v = [];
-                            v.push(sv[0]);
-                        }
-                    }
-
-                    if (/<a\b/i.test(t)) {
-                        const sv = m.match(/id\s*=\s*"[^"]*"/);
-                        if (sv) {
-                            if (!v) v = [];
-                            v.push(sv[0]);
-                        }
-                    }
-
-                    if (v) {
-                        for (let i = 0, len = v.length; i < len; i++) {
-                            t += ' ' + v[i];
-                        }
-                    }
-
-                    return t;
-                }.bind(this));
+            contents = this._deleteDisallowedTags(contents).replace(/(<[a-zA-Z0-9]+)[^>]*(?=>)/g, this._cleanTags.bind(this, true));
 
             const dom = _d.createRange().createContextualFragment(this._deleteDisallowedTags(contents));
 
             try {
-                util._consistencyCheckOfHTML(dom, this._htmlCheckWhitelistRegExp, options.allowStyles);
+                util._consistencyCheckOfHTML(dom, this._htmlCheckWhitelistRegExp);
             } catch (error) {
                 console.warn('[SUNEDITOR.convertContentsForEditor.consistencyCheck.fail] ' + error);
             }
@@ -4898,7 +4913,7 @@ export default function (context, pluginCallButtons, plugins, lang, options, _re
         checkCharCount: function (element, charCounterType) {
             if (options.maxCharCount) {
                 const countType = charCounterType || options.charCounterType;
-                const length = this.getCharLength((typeof element === 'string' ? element : this._charTypeHTML ? element.outerHTML : element.textContent), countType);
+                const length = this.getCharLength((typeof element === 'string' ? element : (this._charTypeHTML && element.nodeType === 1) ? element.outerHTML : element.textContent), countType);
                 if (length > 0 && length + functions.getCharCount(countType) > options.maxCharCount) {
                     this._callCounterBlink();
                     return false;
@@ -5007,6 +5022,7 @@ export default function (context, pluginCallButtons, plugins, lang, options, _re
                     }
                     child = child.parentNode;
                 }
+                if (this._shadowRoot) this._shadowRootControllerEventTarget = [];
             }
 
             // set disallow text nodes
@@ -5018,7 +5034,7 @@ export default function (context, pluginCallButtons, plugins, lang, options, _re
             this._disallowedTextTagsRegExp = disallowTextTags.length === 0 ? null : new wRegExp('(<\\/?)(' + disallowTextTags.join('|') + ')\\b\\s*(?:[^>^<]+)?\\s*(?=>)', 'gi');
 
             // set whitelist
-            const defaultAttr = 'contenteditable|colspan|rowspan|target|href|download|rel|src|alt|class|type|controls|data-format|data-size|data-file-size|data-file-name|data-origin|data-align|data-image-link|data-rotate|data-proportion|data-percentage|origin-size|data-exp|data-font-size';
+            const defaultAttr = 'contenteditable|id|colspan|rowspan|target|href|download|rel|src|alt|class|type|controls|data-format|data-size|data-file-size|data-file-name|data-origin|data-align|data-image-link|data-rotate|data-proportion|data-percentage|origin-size|data-exp|data-font-size';
             this._allowHTMLComments = options._editorTagsWhitelist.indexOf('//') > -1;
             this._htmlCheckWhitelistRegExp = new wRegExp('^(' + options._editorTagsWhitelist.replace('|//', '') + ')$', 'i');
             this.editorTagsWhitelistRegExp = util.createTagsWhitelist(options._editorTagsWhitelist.replace('|//', '|<!--|-->'));
@@ -5174,6 +5190,7 @@ export default function (context, pluginCallButtons, plugins, lang, options, _re
             core._variable.isChanged = true;
             if (context.tool.save) context.tool.save.removeAttribute('disabled');
             if (functions.onChange) functions.onChange(this.getContents(true), this);
+            if (context.element.toolbar.style.display === 'block') event._showToolbarBalloon();
         },
 
         /**
@@ -5222,7 +5239,7 @@ export default function (context, pluginCallButtons, plugins, lang, options, _re
 
             const fileComponent = util.getParentElement(commonCon, util.isComponent);
             if (fileComponent && !util.isTable(fileComponent)) return;
-            if((util.isRangeFormatElement(startCon) || util.isWysiwygDiv(startCon)) && util.isComponent(startCon.childNodes[range.startOffset])) return;
+            if((util.isRangeFormatElement(startCon) || util.isWysiwygDiv(startCon)) && (util.isComponent(startCon.children[range.startOffset]) || util.isComponent(startCon.children[range.startOffset - 1]))) return;
 
             if (rangeEl) {
                 format = util.createElement(formatName || options.defaultTag);
@@ -5482,9 +5499,13 @@ export default function (context, pluginCallButtons, plugins, lang, options, _re
                     }
 
                     /* Indent */
-                    if (commandMapNodes.indexOf('INDENT') === -1 && commandMap.INDENT && util.isListCell(element) && !element.previousElementSibling) {
+                    if (commandMapNodes.indexOf('INDENT') === -1 && commandMap.INDENT) {
                         commandMapNodes.push('INDENT');
-                        commandMap.INDENT.setAttribute('disabled', true);
+                        if (util.isListCell(element) && !element.previousElementSibling) {
+                            commandMap.INDENT.setAttribute('disabled', true);
+                        } else {
+                            commandMap.INDENT.removeAttribute('disabled');
+                        }
                     }
 
                     continue;
@@ -5697,14 +5718,9 @@ export default function (context, pluginCallButtons, plugins, lang, options, _re
             let rects = range.getClientRects();
             rects = rects[isDirTop ? 0 : rects.length - 1];
 
-            let scrollLeft = 0;
-            let scrollTop = 0;
-            let el = topArea;
-            while (!!el) {
-                scrollLeft += el.scrollLeft;
-                scrollTop += el.scrollTop;
-                el = el.parentElement;
-            }
+            const globalScroll = core.getGlobalScrollOffset();
+            let scrollLeft = globalScroll.left;
+            let scrollTop = globalScroll.top;
 
             const editorWidth = topArea.offsetWidth;
             const offsets = event._getEditorOffsets(null);
@@ -6671,10 +6687,16 @@ export default function (context, pluginCallButtons, plugins, lang, options, _re
 
             const responsiveSize = event._responsiveButtonSize;
             if (responsiveSize) {
-                const windowWidth = context.element.toolbar.offsetWidth;
+                let w = 0;
+                if ((core._isBalloon || core._isInline) && options.toolbarWidth === 'auto') {
+                    w = context.element.topArea.offsetWidth;
+                } else {
+                    w = context.element.toolbar.offsetWidth;
+                }
+
                 let responsiveWidth = 'default';
                 for (let i = 1, len = responsiveSize.length; i < len; i++) {
-                    if (windowWidth < responsiveSize[i]) {
+                    if (w < responsiveSize[i]) {
                         responsiveWidth = responsiveSize[i] + '';
                         break;
                     }

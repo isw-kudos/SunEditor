@@ -204,7 +204,7 @@ export default {
         const relative = el.relative;
         const editorArea = el.editorArea;
         const isNewToolbarContainer = mergeOptions.toolbarContainer && mergeOptions.toolbarContainer !== originOptions.toolbarContainer;
-        const isNewToolbar = mergeOptions.buttonList !== originOptions.buttonList || mergeOptions.mode !== originOptions.mode || isNewToolbarContainer;
+        const isNewToolbar = mergeOptions.lang !== originOptions.lang || mergeOptions.buttonList !== originOptions.buttonList || mergeOptions.mode !== originOptions.mode || isNewToolbarContainer;
 
         const tool_bar = this._createToolBar(document, (isNewToolbar ? mergeOptions.buttonList : originOptions.buttonList), mergeOptions.plugins, mergeOptions);
         if (tool_bar.pluginCallButtons.math) this._checkKatexMath(mergeOptions.katex);
@@ -377,9 +377,9 @@ export default {
         /** Values */
         options.lang = options.lang || _defaultLang;
         options.defaultTag = typeof options.defaultTag === 'string' ? options.defaultTag : 'p';
-        const textTags = options.textTags = [{bold: 'STRONG', underline: 'U', italic: 'EM', strike: 'DEL'}, (options.textTags || {})].reduce(function (_default, _new) {
+        const textTags = options.textTags = [{bold: 'STRONG', underline: 'U', italic: 'EM', strike: 'DEL', sub: 'SUB', sup: 'SUP'}, (options.textTags || {})].reduce(function (_default, _new) {
             for (let key in _new) {
-                if (util.hasOwn(_new, key)) _default[key] = _new[key];
+                _default[key] = _new[key];
             }
             return _default;
         }, {});
@@ -392,44 +392,23 @@ export default {
             'i': textTags.italic,
             'del': textTags.strike,
             'strike': textTags.strike,
-            's': textTags.strike
+            's': textTags.strike,
+            'sub': textTags.sub,
+            'sup': textTags.sup
         };
         options.value = typeof options.value === 'string' ? options.value : null;
         options.historyStackDelayTime = typeof options.historyStackDelayTime === 'number' ? options.historyStackDelayTime : 400;
         /** Whitelist */
-        options._defaultTagsWhitelist = typeof options._defaultTagsWhitelist === 'string' ? options._defaultTagsWhitelist : 'br|p|div|pre|blockquote|h[1-6]|ol|ul|li|hr|figure|figcaption|img|iframe|audio|video|source|table|thead|tbody|tr|th|td|a|b|strong|var|i|em|u|ins|s|span|strike|del|sub|sup|code';
-        options._editorTagsWhitelist = options._defaultTagsWhitelist + (typeof options.addTagsWhitelist === 'string' && options.addTagsWhitelist.length > 0 ? '|' + options.addTagsWhitelist : '');
-        options.pasteTagsWhitelist = typeof options.pasteTagsWhitelist === 'string' ? options.pasteTagsWhitelist : options._editorTagsWhitelist;
+        const whitelist = 'br|p|div|pre|blockquote|h1|h2|h3|h4|h5|h6|ol|ul|li|hr|figure|figcaption|img|iframe|audio|video|source|table|thead|tbody|tr|th|td|a|b|strong|var|i|em|u|ins|s|span|strike|del|sub|sup|code|svg|path';
+        options._defaultTagsWhitelist = typeof options._defaultTagsWhitelist === 'string' ? options._defaultTagsWhitelist : whitelist;
+        options._editorTagsWhitelist = this._setWhitelist(options._defaultTagsWhitelist + (typeof options.addTagsWhitelist === 'string' && options.addTagsWhitelist.length > 0 ? '|' + options.addTagsWhitelist : ''), options.tagsBlacklist);
+        options.pasteTagsWhitelist = this._setWhitelist(typeof options.pasteTagsWhitelist === 'string' ? options.pasteTagsWhitelist : options._editorTagsWhitelist, options.pasteTagsBlacklist);
         options.attributesWhitelist = (!options.attributesWhitelist || typeof options.attributesWhitelist !== 'object') ? null : options.attributesWhitelist;
-        // @v3
-        // const defaultAllowStyles = {
-        //     format: ['margin-left', 'margin-right', 'text-align', 'line-height'],
-        //     rangeFormat: [],
-        //     closureRangeFormat: [],
-        //     freeFormat: [],
-        //     closureFreeFormat: [],
-        //     component: [],
-        //     span: ['font-family', 'color', 'background-color', 'font-size']
-        // };
-        // options.allowStyles = (!options.allowStyles || typeof options.allowStyles !== 'object') ? defaultAllowStyles : [defaultAllowStyles, options.allowStyles].reduce(function (_default, _new) {
-        //     for (let key in _new) {
-        //         if (!_default[key]) _default[key] = [];
-        //         const newStyle = _new[key];
-        //         if (typeof newStyle === 'string') {
-        //             _default[key] = !newStyle ? [] : newStyle.split('|');
-        //         } else {
-        //             for (let i = 0, len = newStyle.length, n; i < len; i++) {
-        //                 n = newStyle[i];
-        //                 if (_default[key].indexOf(n) === -1) _default[key].push(n)
-        //             }
-        //         }
-        //     }
-        //     return _default;
-        // }, {});
         /** Layout */
         options.mode = options.mode || 'classic'; // classic, inline, balloon, balloon-always
         options.rtl = !!options.rtl;
         options._editableClass = 'sun-editor-editable' + (options.rtl ? ' se-rtl' : '');
+        options._printClass = typeof options._printClass === 'string' ? options._printClass : null;
         options.toolbarWidth = options.toolbarWidth ? (util.isNumber(options.toolbarWidth) ? options.toolbarWidth + 'px' : options.toolbarWidth) : 'auto';
         options.toolbarContainer = typeof options.toolbarContainer === 'string' ? document.querySelector(options.toolbarContainer) : options.toolbarContainer;
         options.stickyToolbar = (/balloon/i.test(options.mode) || !!options.toolbarContainer) ? -1 : options.stickyToolbar === undefined ? 0 : (/^\d+/.test(options.stickyToolbar) ? util.getNumber(options.stickyToolbar, 0) : -1);
@@ -442,6 +421,12 @@ export default {
         options.codeMirror = options.codeMirror ? options.codeMirror.src ? options.codeMirror : {src: options.codeMirror} : null;
         /** katex object (Math plugin) */
         options.katex = options.katex ? options.katex.src ? options.katex : {src: options.katex} : null;
+        options.mathFontSize = !!options.mathFontSize ? options.mathFontSize : [
+            {text: '1', value: '1em'},
+            {text: '1.5', value: '1.5em'},
+            {text: '2', value: '2em'},
+            {text: '2.5', value: '2.5em'}
+        ];
         /** Display */
         options.position = typeof options.position === 'string' ? options.position : null;
         options.display = options.display || (element.style.display === 'none' || !element.style.display ? 'block' : element.style.display);
@@ -490,6 +475,7 @@ export default {
         options.imageAccept = (typeof options.imageAccept !== 'string' || options.imageAccept.trim() === "*") ? 'image/*' : options.imageAccept.trim() || 'image/*';
         /** Image - image gallery */
         options.imageGalleryUrl = typeof options.imageGalleryUrl === 'string' ? options.imageGalleryUrl : null;
+        options.imageGalleryHeader = options.imageGalleryHeader || null;
         /** Video */
         options.videoResizing = options.videoResizing === undefined ? true : options.videoResizing;
         options.videoHeightShow = options.videoHeightShow === undefined ? true : !!options.videoHeightShow;
@@ -572,6 +558,17 @@ export default {
 
         /** _init options */
         options._editorStyles = util._setDefaultOptionStyle(options, options.defaultStyle);
+    },
+
+    _setWhitelist: function (whitelist, blacklist) {
+        if (typeof blacklist !== 'string') return whitelist;
+        blacklist = blacklist.split('|');
+        whitelist = whitelist.split('|');
+        for (let i = 0, len = blacklist.length, index; i < len; i++) {
+            index = whitelist.indexOf(blacklist[i]);
+            if (index > -1) whitelist.splice(index, 1);
+        }
+        return whitelist.join('|');
     },
 
     /**
@@ -820,7 +817,6 @@ export default {
 
                 if (vertical) {
                     const sv =  separator_vertical.cloneNode(false);
-                    if (align) sv.style.float = align;
                     _buttonTray.appendChild(sv);
                 }
                 
